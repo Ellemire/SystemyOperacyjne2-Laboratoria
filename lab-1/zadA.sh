@@ -36,7 +36,7 @@ search_unreadable() {
             search_unreadable "$item"
         elif [ -f "$item" ] && [ ! -r "$item" ]
         then
-            echo "${item#dane/}"
+            echo "${item#"dane/"}"
         fi
     done
 }

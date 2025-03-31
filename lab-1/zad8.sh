@@ -27,7 +27,7 @@ for plik in "dane"/* "dane"/*/*
 do
     if [ -f "$plik" ] && [ -x "$plik" ]
     then
-        echo "${plik#"dane"/}"
+        echo "${plik#"dane/"}"
     fi
 done
 
