@@ -33,9 +33,11 @@ for file in dane/* dane/*/*; do
         target=""
 
         for candidate in dane/* dane/*/*; do
-            if [ -f "$candidate" ] && [ ! -L "$candidate" ] && [ "$(basename "$candidate")" = "$name" ]; then
-                target="$candidate"
-                break
+            if [ "$(basename "$candidate")" = "$name" ]; then
+                if [ -f "$candidate" ] && [ ! -L "$candidate" ]; then
+                    target="$candidate"
+                    break
+                fi
             fi
         done
         

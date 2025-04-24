@@ -23,7 +23,7 @@
 #
 
 for file in dane/icao/*; do
-    if [ "$file" -ef dane/twardziel ]; then
+    if [ "$file" -ef dane/twardziel ]; then     # porównuje miejsce na dysku
         echo "$(basename "$file")"
     fi
 done
