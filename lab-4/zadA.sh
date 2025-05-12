@@ -27,13 +27,9 @@
 # Każdy adres e-mail wyświetlać w osobnej linii, nie wyświetlać nic ponadto.
 #
 
-tail -n +12 dodatkowe/listaSluchaczy_E07-19x.csv | awk -F';' '{
-    if (match($2, /[0-9]+/)) {
-        digits = substr($2, RSTART, RLENGTH);
-        if (length(digits) >= 6) {
-            print substr(digits, length(digits)-5, 6) "@student.pwr.edu.pl";
-        }
-    }
-}'
+awk -F';' '$2 ~ /_[0-9]{9}/ {print substr($2, length($2)-5, 6) "@student.pwr.edu.pl"}' dodatkowe/listaSluchaczy_E07-19x.csv
 
-#
+# Lp.;Nr albumu;Nazwisko;Imiona;Rok;Semestr;Przedmiot kształcenia;Ocena (np. 3.0);Data (RRRR-MM-DD);Komentarz
+# 1;_018123456;Adamska;Felicja Marta;3;6;PO-W04-INF-INT- -ST-Ii-WRO-ITT- - - - -PWR1-DWU;;;;
+# 2;_018123457;Adamski;Jakub Adrian;3;6;PO-W04-INF-IGM- -ST-Ii-WRO-ITT- - - - -PWR1-DWU;;;;
+# 3;_013123458;Baran;Maja Zofia;3;6;PO-W04-INF-INS- -ST-Ii-WRO-ITT- - - - -PWR1-DWU;;;;

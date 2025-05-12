@@ -23,4 +23,7 @@
 # / wartość w każdym wierszu). Każdą nazwę użytkownika wypisać w osobnej linii.
 #
 
-grep -v "/bin/nologin$\|/bin/false$" dodatkowe/etc-passwd | cut -d: -f1 #  
+grep -v "/bin/nologin$\|/bin/false$" dodatkowe/etc-passwd | cut -d: -f1
+#  -v wyklucza linie pasujące do wzorca
+# usbmux:x:140:140:usbmux user:/:/usr/bin/nologin
+# user1:x:1000:1000::/home/user1:/bin/bash

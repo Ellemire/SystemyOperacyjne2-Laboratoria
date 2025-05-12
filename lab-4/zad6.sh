@@ -25,3 +25,7 @@
 #
 
 awk '$5 ~ /0\.0\.0\.0:/ {split($5, a, ":"); print a[2]}' dodatkowe/ss-tulpn | sort -u #
+# Netid    State      Recv-Q     Send-Q          Local Address:Port          Peer Address:Port
+# udp      UNCONN     0          0                     0.0.0.0:48249              0.0.0.0:*        users:(("avahi-daemon",pid=1897,fd=14))
+# udp      UNCONN     0          0               127.0.0.53%lo:53                 0.0.0.0:*        users:(("systemd-resolve",pid=2157,fd=12))
+# udp      UNCONN     0          0                     0.0.0.0:68                 0.0.0.0:*        users:(("dhclient",pid=2276,fd=6))

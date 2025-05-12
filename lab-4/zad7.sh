@@ -23,3 +23,10 @@
 #
 
 tail -n +2 dodatkowe/ps-aux | sort -k3 -nr | head -n1 | awk '{print $2, substr($0, index($0,$11))}' #
+
+# pominięcie nagłówka, sortowanie malejąco po 3 kolumie (zużycie CPU), pierwszy wiersz
+
+# USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+# root         1  0.0  0.0 225640  6288 ?        Ss   Apr02   0:37 /sbin/init text
+# root         2  0.0  0.0      0     0 ?        S    Apr02   0:01 [kthreadd]
+# root         3  0.0  0.0      0     0 ?        I<   Apr02   0:00 [rcu_gp]

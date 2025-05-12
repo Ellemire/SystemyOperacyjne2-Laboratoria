@@ -26,4 +26,4 @@
 #
 
 awk 'NR>1 {print $1}' dodatkowe/ps-aux | sort -u
-# tail -n +2 dodatkowe/ps-aux | awk '{print $1}' | sort -u #
+# NR>1 pomija pierwszą linię

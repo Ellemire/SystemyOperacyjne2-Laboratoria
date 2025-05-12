@@ -24,3 +24,6 @@
 #
 
 grep '^syslog' dodatkowe/etc-services | awk '{print $2}' | cut -d/ -f1 | sort -u #
+# ^ - początek linii
+# tcpmux              1/tcp
+# tcpmux              1/udp

@@ -23,3 +23,4 @@
 #
 
 find coreutils-8.32 -type f -printf "%f\n" | sort | uniq -c | sort -nr | head -n1 | awk '{print $2}' #
+# sort -nr number reverse (malejąco)
