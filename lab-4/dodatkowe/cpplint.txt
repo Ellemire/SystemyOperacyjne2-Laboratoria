@@ -1,0 +1,38 @@
+<div id="main">
+
+<h2><a name="cpplint" id="cpplint">CppLint</a></h2>
+<div class="level2">
+    <p>The tool performs checking for compatibility of code with <a href="https://google.github.io/styleguide/cppguide.html" class="urlextern" title="https://google.github.io/styleguide/cppguide.html" rel="nofollow">Google’s style guide for C++ language</a>, which ensures code to be clean from bad practices and more secure. It also checks for syntax errors and style consistency.</p>
+</div>
+
+<h4><a name="installation" id="installation">Installation</a></h4>
+<div class="level3">
+    <p>CppLint is a Python script and can be easily installed in every environment that has also the Python's package manager (<b>pip</b>) installed. Use the following command to do so:</p>
+    <pre class="code bash">pip install cpplint</pre>
+</div>
+
+<h4><a name="usage" id="usage">Usage</a></h4>
+<div class="level3">
+    <h5><a name="basic_run" id="basic_run">Basic run</a></h5>
+    <p>The basic usage of <b>CppLint</b> is very simple:</p>
+    <pre class="code bash">cpplint [--exclude=&lt;paths&gt;] &lt;directory/file&gt;</pre>
+
+    <p>Where:</p>
+    <ul>
+        <li><b>&lt;paths&gt;</b> - comma separated list of paths (files, directories) that should not be checked</li>
+    </ul>
+
+    <h5><a name="examples" id="examples">Examples</a></h5>
+    <pre class="code bash">cpplint ./code/*</pre>
+    <pre class="code bash">cpplint --exclude=./magic/ ./*</pre>
+</div>
+
+<h4><a name="warning" id="warning">Warning</a></h4>
+<div class="level3">
+    <p>CppLint bases on regular expressions and occasionally may report false-positive warnings; it is possible to suppress scanning in specific parts of code by adding the following comment at the end of each impacted line:</p>
+    <pre class="code cpp">// NOLINT</pre>
+    <p>It is possible (and better) to suppress warnings for a only one specific <b>rule</b>, using:</p>
+    <pre class="code cpp">// NOLINT(RULE)</pre>
+</div>
+
+</div>

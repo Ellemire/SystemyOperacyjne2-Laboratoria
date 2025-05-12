@@ -1,0 +1,627 @@
+\documentclass[usenames,dvipsnames,aspectratio=43,presentation]{beamer}
+\usepackage{pgfpages}
+\setbeameroption{show notes}
+
+\usepackage{cmap}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{soul}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[export]{adjustbox}
+\usepackage{setspace}
+\usepackage{tikz}
+\usepackage{colortbl}
+\usepackage{xargs}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tcolorbox}
+\usepackage{hyperref}
+\usepackage[font=scriptsize,labelfont=bf]{caption}
+\usepackage{listings}
+\usepackage{minted}
+\usepackage{ulem}
+\usepackage{ragged2e}
+\usepackage{pdfrender}
+\hypersetup{pdfstartview={Fit}}
+\usepackage{lmodern}
+
+
+%
+% Template definition
+%
+\input{.template-pwr.tex}  % not from ftp://ftp.pwr.wroc.pl/ubuntu/ ;-)
+
+
+%
+% Minted
+%
+\definecolor{minted-codehighlight}{RGB}{255, 250, 200}
+\definecolor{minted-verb-line}{RGB}{17, 133, 168}
+\renewcommand{\theFancyVerbLine}{%
+  \sffamily%
+  \textcolor{minted-verb-line}{%
+    \tiny%
+    \textrm{\arabic{FancyVerbLine}}|%
+  }%
+}
+
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+\setmintedinline[bash]{bgcolor=bg}
+
+
+%
+% Others
+%
+\setlength{\fboxsep}{0pt}
+\setlength{\fboxrule}{1pt}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+
+
+%
+% Metadata
+%
+\title{Inżynieria Obrazów}
+\subtitle{Laboratorium nr 6 \\
+          Dithering i rasteryzacja}
+\author{Szymon Datko ~\&~ Mateusz Gniewkowski}
+\institute{Wydział Elektroniki, \\
+           Politechnika Wrocławska}
+\date{semestr letni 2020/2021}
+
+
+%
+% Content
+%
+\begin{document}
+    \begin{frame}
+        \setstretch{1.5}
+
+        \titlepage
+    \end{frame}
+    
+    
+    \begin{frame}
+        \frametitle{Cel ćwiczenia}
+        \setstretch{1.25}
+        \footnotesize
+        
+        \begin{enumerate}
+            \setlength{\itemsep}{2.0em}
+            \footnotesize
+            \item Zaznajomienie się z problematyką redukcji kolorów w obrazach.
+            \item Implementacja algorytmu ditheringu w obrazach.
+            \item Usystematyzowanie informacji na temat potoku graficznego.
+            \item Zapoznanie się z technikami rasteryzacji obrazu.
+        \end{enumerate}
+    \end{frame}
+
+
+    \begin{frame}[fragile]
+        \frametitle{Redukcja palety barw}
+        \setstretch{1.25}
+        \footnotesize
+
+        \begin{itemize}
+            \setlength{\itemsep}{0.5em}
+            \item[--] Typowo każdą składową koloru reprezentujemy jako jedną z 256 wartości.
+                      \begin{itemize}
+                          \setlength{\itemsep}{0.25em}
+                          \scriptsize
+                          \item Jest to tak zwany \textit{true color} – głębia 24-bitowa, 8 bitów na kanał.
+                          \item Daje to w sumie 16 777 216 unikalnych odcieni możliwych do uzyskania.
+                      \end{itemize}
+            \item[--] Niektóre urządzenia i formaty graficzne są ograniczone w tej kwestii.
+            \item[--] Efektywnie mamy wtedy dostępnych mniej wartości pośrednich odcieni.
+        \end{itemize}
+
+        \vfill
+
+        \begin{minipage}{\textwidth}
+            \setstretch{1.0}
+            \label{fs-code}
+            \begin{minted}[fontsize=\tiny]{sh}
+k = 256
+          0  1  2  ...  63  64  65  ...  127  128  129  ...  191  192  193  ...  253  254  255
+
+k = 9
+          0        32       64       96       128       160       192       224            255
+
+k = 5
+          0                 64                128                 192                      255
+
+k = 3
+          0                                   128                                          255
+
+k = 2
+          0                                                                                255
+            \end{minted}
+        \end{minipage}
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Dithering}
+        \setstretch{1.25}
+        \footnotesize
+
+        \begin{itemize}
+            \item[--] Zastosowanie szumu w celu zniwelowania błędu kwantyzacji.
+            \item[--] Zapobiega efektowi pasmowania przy zredukowanej palecie kolorów.
+        \end{itemize}
+        
+        \vfill
+        
+        \begin{minipage}{\textwidth}
+            \centering
+
+            \includegraphics[width=0.75\textwidth]{images/dithering-truecolor.png}
+
+            \includegraphics[width=0.75\textwidth]{images/dithering-32colors.png}
+
+            \includegraphics[width=0.75\textwidth]{images/dithering-8colors.png}
+
+            \includegraphics[width=0.75\textwidth]{images/dithering-banding.png}
+        \end{minipage}
+
+        \let\thefootnote\relax\footnote[frame]{
+            \tiny
+            \hspace{-3.25em}
+            Źródło obrazów:
+            https://pl.wikipedia.org/wiki/Dithering_(grafika_komputerowa)
+        }
+    \end{frame}
+
+
+    \begin{frame}[fragile]
+        \frametitle{Algorytm Floyda–Steinberga}
+        \setstretch{1.25}
+        \footnotesize
+
+        \begin{itemize}
+            \item[--] Kontrolowane rozpraszanie pikseli o kolorach z ograniczonej palety barw.
+            \item[--] Dla każdego przetwarzanego piksela obliczany jest błąd kwantyzacji.
+            \item[--] Wartość błędu jest dodawana do sąsiednich, nieprzetworzonych pikseli.
+                      \begin{itemize}
+                          \scriptsize
+                          \item Jeśli bieżący piksel był rozjaśniony, to sąsiednie będą przyciemnione, itd.
+                      \end{itemize}
+            \item[--] Rozproszenie błędu realizowane jest według macierzy współczynników,
+                      \begin{equation*}
+                          \begin{bmatrix}
+                              -            & *            & \frac{7}{16} \\
+                              \frac{3}{16} & \frac{5}{16} & \frac{1}{16}
+                          \end{bmatrix}
+                          \mathrm{.}
+                      \end{equation*}
+        \end{itemize}
+
+        \vspace{-0.5em}
+
+        \begin{minipage}{\textwidth}
+            \setstretch{1.0}
+            \label{fs-code}
+            \begin{minted}[fontsize=\scriptsize]{pascal}
+for each y from top to bottom do
+    for each x from left to right do
+        oldpixel := pixel[y][x]
+        newpixel := find_closest_palette_color(oldpixel)
+        pixel[y][x] := newpixel
+        quant_error := oldpixel - newpixel
+        pixel[y    ][x + 1] := pixel[y    ][x + 1] + quant_error * 7 / 16
+        pixel[y + 1][x - 1] := pixel[y + 1][x - 1] + quant_error * 3 / 16
+        pixel[y + 1][x    ] := pixel[y + 1][x    ] + quant_error * 5 / 16
+        pixel[y + 1][x + 1] := pixel[y + 1][x + 1] + quant_error * 1 / 16
+            \end{minted}
+        \end{minipage}
+
+        \let\thefootnote\relax\footnote[frame]{
+            \tiny
+            \hspace{-3.25em}
+            Źródło:
+            \url{file:///home/http/proxy/wikipedia-Floyd-Steinberg}
+        }
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Algorytm Floyda–Steinberga – przykład}
+        \setstretch{1.25}
+        \footnotesize
+
+        \begin{itemize}
+            \item[--] Oba poniższe obrazki składają się jedynie z czterech tych samych kolorów.
+            \item[--] Różni je jedynie ich proporcja ilościowa i rozmieszczenie na obrazku.
+            \item[--] Algorytm można zrealizować także na obrazkach kolorowych.
+                      \begin{itemize}
+                          \scriptsize
+                          \item Obliczenia powtarzamy wtedy dla każdej składowej koloru niezależnie.
+                      \end{itemize}
+            \item[--] \textbf{Ważne}: wejście algorytmu stanowi obrazek \textbf{przed} redukcją kolorów.
+        \end{itemize}
+
+        \vfill
+
+        \begin{minipage}{\textwidth}
+            \centering
+
+            \includegraphics[width=0.45\textwidth]{images/gacław-1.png}
+            \includegraphics[width=0.45\textwidth]{images/gacław-2.png}
+        \end{minipage}
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Rasteryzacja}
+        \setstretch{1.25}
+        \footnotesize
+
+        \begin{itemize}
+            \item[--] Proces odwzorowywania kształtu w możliwy do wyświetlenia zbiór pikseli.
+            \item[--] Obecnie realizowany jest głównie sprzętowo przez procesory graficzne.
+            \item[--] Implementacje programowe dotyczą np. edytorów grafiki wektorowej.
+        \end{itemize}
+
+        \vfill
+
+        \begin{minipage}{\textwidth}
+            \centering
+
+            \includegraphics[width=0.5\textwidth]{images/rasteryzacja.png}
+        \end{minipage}
+        
+        \let\thefootnote\relax\footnote[frame]{
+            \tiny
+            \hspace{-3.25em}
+            Źródło obrazu:
+            http://pl.wikipedia.org/wiki/Rasteryzacja
+        }
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Algorytm Bresenhama}
+        \setstretch{1.25}
+        \footnotesize
+
+        \begin{itemize}
+            \setlength{\itemsep}{-0.1em}
+            \item[--] Bardzo wydajny algorytm rysowania ciągłych odcinków.
+            \item[--] Opiera się na analizie współczynnika kierunkowego i minimalizacji błędu.
+            \item[--] Wyznaczamy kierunek zmian w osi X i Y oraz dominującą oś dla zmian.
+                      \begin{itemize}
+                          \setlength{\itemsep}{0.1em}
+                          \scriptsize
+                          \item W kierunku dominującym zmiana następuje w każdym kroku.
+                          \item Krok w drugim kierunku zależny jest od wyznaczonego błędu.
+                      \end{itemize}
+            \item[--] Linię rysujemy od punktu początkowego aż do osiągnięcia końca.
+        \end{itemize}
+
+        \vfill
+
+        \begin{minipage}{\textwidth}
+            \centering
+
+            \includegraphics[width=0.7\textwidth]{images/bresenham.png}
+        \end{minipage}
+
+        \let\thefootnote\relax\footnote[frame]{
+            \tiny
+            \hspace{-3.25em}
+            Źródło obrazu:
+            \url{https://en.wikipedia.org/wiki/Bresenham's_line_algorithm}
+        }
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Algorytm Bresenhama – przykładowa implementacja}
+        \setstretch{1.25}
+        \footnotesize
+        
+        \begin{itemize}
+            \setlength{\itemsep}{0.25em}
+            \item[--] Wyznaczenie wielkości pomocniczych,
+                      \begin{itemize}
+                          \setlength{\itemsep}{0.25em}
+                          \scriptsize
+                          \item $\Delta{X} = |X_2 - X_1|$,
+                          \item $\Delta{Y} = |Y_2 - Y_1|$,
+                          \item $X_i = sign(X_2 - X_1) = \frac{X_2 - X_1}{|X_2 - X_1|}$ lub 0,
+                          \item $Y_i = sign(Y_2 - Y_1) = \frac{Y_2 - Y_1}{|Y_2 - Y_1|}$ lub 0.
+                      \end{itemize}
+            \item[--] Określenie początkowej wartości błędu,
+                      \begin{itemize}
+                          \setlength{\itemsep}{0.25em}
+                          \scriptsize
+                          \item $d = 2 \cdot \Delta{Y} - \Delta{X}$, ~~~gdy $\Delta{X} > \Delta{Y}$,
+                          \item $d = 2 \cdot \Delta{X} - \Delta{Y}$, ~~~gdy $\Delta{Y} > \Delta{X}$.
+                      \end{itemize}
+            \item[--] Rysowanie w punkcie początkowym $X = X_1$ i $Y = Y_1$.
+            \item[--] Powtarzanie w pętli aż do osiągnięcia punktu docelowego.
+                      \begin{itemize}
+                          \setlength{\itemsep}{0.1em}
+                          \scriptsize
+                          \item Krok w kierunku dominującym.
+                                \begin{itemize}
+                                    \scriptsize
+                                    \item[-] $X \mathrel{+}= X_i$ oraz $d \mathrel{+}= 2 \cdot \Delta{Y}$, ~~~gdy $\Delta{X} > \Delta{Y}$.
+                                    \item[-] $Y \mathrel{+}= Y_i$ oraz $d \mathrel{+}= 2 \cdot \Delta{X}$, ~~~gdy $\Delta{Y} > \Delta{X}$.
+                                \end{itemize}
+                          \item Krok w drugim kierunku, o ile trzeba.
+                                \begin{itemize}
+                                    \scriptsize
+                                    \item[-] $Y \mathrel{+}= Y_i$ oraz $d \mathrel{-}= 2 \cdot \Delta{X}$, ~~~gdy $\Delta{X} > \Delta{Y}$ i $d \ge 0$.
+                                    \item[-] $X \mathrel{+}= X_i$ oraz $d \mathrel{-}= 2 \cdot \Delta{Y}$, ~~~gdy $\Delta{Y} > \Delta{X}$ i $d \ge 0$.
+                                \end{itemize}
+                      \end{itemize}
+        \end{itemize}
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Algorytm przeglądania linii}
+        \setstretch{1.25}
+        \footnotesize
+
+        \begin{itemize}
+            \item[--] Jeden z klasycznych pomysłów na rysowanie wypełnionych wielokątów.
+            \item[--] Algorytm staje się kłopotliwy przy dużej liczbie prymitywów.
+            \item[--] Obecnie implementuje się techniki związane z rysowaniem trójkątów.
+        \end{itemize}
+
+        \vfill
+
+        \begin{minipage}{\textwidth}
+            \centering
+
+            \fbox{\includegraphics{images/scanlines.png}}
+        \end{minipage}
+        
+        \let\thefootnote\relax\footnote[frame]{
+            \tiny
+            \hspace{-3.25em}
+            Źródło obrazu:
+            \url{https://eduinf.waw.pl/inf/utils/002_roz/2008_22.php}
+        }
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Rysowanie trójkątów}
+        \setstretch{1.25}
+        \footnotesize
+
+        \begin{itemize}
+            \setlength{\itemsep}{-0.1em}
+            \item[--] Trójkąt jest podstawową jednostką renderingu we współczesnym potoku.
+            \item[--] Wykorzystuje się prostotę w określeniu czy dany punkt należy do trójkąta.
+            \item[--] Przykładowy pomysł:
+                      \begin{itemize}
+                          \setlength{\itemsep}{0.1em}
+                          \scriptsize
+                          \item Wyznaczyć pola trzech trójkątów, bazując na iloczynie wektorowym w 2D.
+                          \item $Area(A, B, C) = (C.x - A.x) \cdot (B.y - A.y) - (C.y - A.y) \cdot (B.x - A.x)$.
+                          \item Na rysunku: $Area(V0, V1, P)$, $Area(V1, V2, P)$, $Area(V2, V0, P)$.
+                          \item Jeśli znaki (+/-) wyników są takie same to punkt P należy do trójkąta.
+                          \label{triangle-draw}
+                      \end{itemize}
+        \end{itemize}
+
+        \vfill
+
+        \begin{minipage}{\textwidth}
+            \centering
+
+            \fbox{\includegraphics[width=0.9\textwidth]{images/triangle-area.png}}
+        \end{minipage}
+
+        \let\thefootnote\relax\footnote[frame]{
+            \tiny
+            \hspace{-3.25em}
+            Źródło obrazu:
+            sftp://10.12.13.14/home/user/triangles.png
+        }
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Przykładowy rezultat}
+        \setstretch{1.25}
+        \footnotesize
+
+        \begin{minipage}{\textwidth}
+            \centering
+
+            \includegraphics[width=1.0\textwidth]{images/rasteryzacja-done.png}
+        \end{minipage}
+    \end{frame}
+
+
+    \begin{frame}
+        Koniec wprowadzenia.
+
+        \vspace{2.0em}
+
+        {
+            \Huge
+            \color{PWr!50!black}
+
+            Zadania do wykonania...
+        }
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Zadania do wykonania (1)}
+        \setstretch{1.25}
+        \footnotesize
+
+        Na ocenę \textbf{3.0} należy zaimplementować dithering w skali szarości.
+        
+        \vfill
+        
+        Wskazówki:
+        \begin{itemize}
+            \setlength{\itemsep}{0.5em}
+            \item[--] odwzorować w języku Python kod ze slajdu \ref{fs-code},
+            \item[--] wygodnie będzie pracować na wartościach typu \mintinline{python}{uint8},
+            \item[--] funkcja \mintinline{python}{find_closest_palette_color()} realizuje redukcję palety barw,
+                      \begin{itemize}
+                          \setlength{\itemsep}{0.25em}
+                          \scriptsize
+                          \item w najprostszym układzie wystarczy zaokrąglić wartości w macierzy pikseli,
+                          \item \mintinline{python}{return round(value / 255) * 255},
+                      \end{itemize}
+            \item[--] dodanie błędu kwantyzacji może spowodować wyjście poza zakres typu,
+                      \begin{itemize}
+                          \setlength{\itemsep}{0.25em}
+                          \scriptsize
+                          \item należy odpowiednio się przed tym zabezpieczyć i przyciąć wartości,
+                          \item w przeciwnym wypadku zaobserwujemy pojedyncze \textit{bad pixele},
+                      \end{itemize}
+            \item[--] należy też uważać na zakres indeksów przy odwołaniach do tablicy pikseli.
+        \end{itemize}
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Zadania do wykonania (2)}
+        \setstretch{1.25}
+        \footnotesize
+
+        Na ocenę \textbf{3.5} należy uwzględnić kolory w algorytmie Floyda–Steinberga.
+
+        \vfill
+
+        Wskazówki:
+        \begin{itemize}
+            \setlength{\itemsep}{0.5em}
+            \item[--] uwagi i kroki do wykonania są analogiczne jak w zadaniu poprzednim,
+            \item[--] dodatkowo umożliwić wybór ile wartości składowych chcemy zachować,
+                      \begin{itemize}
+                          \setlength{\itemsep}{0.25em}
+                          \scriptsize
+                          \item domyślnie mają to być dwie wartości dla każdej składowej – 0 i 255,
+                          \item \mintinline{python}{return round((k - 1) * value / 255) * 255 / (k - 1)},
+                      \end{itemize}
+            \item[--] należy obliczyć błąd kwantyzacji osobno dla każdej składowej koloru,
+            \item[--] dla porównania wyświetlić jak wygląda obrazek po samej redukcji barw,
+            \item[--] skuteczność algorytmu potwierdzić prezentując histogram kolorów.
+        \end{itemize}
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Zadania do wykonania (3)}
+        \setstretch{1.25}
+        \footnotesize
+
+        Na ocenę \textbf{4.0} należy zaimplementować rysowanie jednokolorowej linii i trójkąta.
+        
+        \vfill
+        
+        Wskazówki:
+        \begin{itemize}
+            \setlength{\itemsep}{0.5em}
+            \item[--] wykorzystać dostarczoną funkcję \mintinline{python}{draw_point()} do rysowania,
+            \item[--] rysowanie linii zrealizować np. algorytmem Bresenhama,
+            \item[--] rysowanie trójkąta polega na testowaniu które punkty leżą w jego środku,
+                      \begin{itemize}
+                          \setlength{\itemsep}{0.25em}
+                          \scriptsize
+                          \item przykładowy pomysł na sprawdzanie przynależności opisano na slajdzie \ref{triangle-draw},
+                      \end{itemize}
+            \item[--] dla trójkąta warto wyznaczyć obszar ograniczający wokół niego,
+                      \begin{itemize}
+                          \setlength{\itemsep}{0.25em}
+                          \scriptsize
+                          \item skutecznie ogranicza to liczbę punktów, które musimy przetestować,
+                          \item tak zwany \textit{bounding box}, na przykład dla trójkąta ABC:
+                          \item $x_{min} = min(A.x, B.x, C.x)$, $x_{max} = max(A.x, B.x, C.x)$,
+                      \end{itemize}
+                  \item[--] dopuszczalna jest realizacja innych algorytmów, dających sensowny wynik.
+        \end{itemize}
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Zadania do wykonania (4)}
+        \setstretch{1.25}
+        \footnotesize
+
+        Na ocenę \textbf{4.5} należy wprowadzić interpolację koloru w rysowanej linii i trójkącie.
+
+        \vfill
+
+        Wskazówki:
+        \vspace{-0.2em}
+        \begin{itemize}
+            \setlength{\itemsep}{-0.2em}
+            \item[--] zakładamy, że kolor jest podany z każdym wierzchołkiem (jak położenie),
+            \item[--] w przypadku linii można wykorzystać interpolację liniową koloru,
+                      \vspace{-0.1em}
+                      \begin{itemize}
+                          \scriptsize
+                          \item $\vec{C} = \vec{A} + t \cdot (\vec{B} - \vec{A})$, dla $t \in [0; 1]$,
+                          \item $t$ określa wtedy postęp w rysowaniu linii (0 = początek, 1 = koniec),
+                      \end{itemize}
+            \item[--] w przypadku trójkąta wykorzystujemy ważenie względem pól trójkątów,
+                      \vspace{-0.1em}
+                      \begin{itemize}
+                          \scriptsize
+                          \item $\vec{C}_P = \frac{\lambda_0}{\lambda} \cdot \vec{V0} + \frac{\lambda_1}{\lambda} \cdot \vec{V1} + \frac{\lambda_2}{\lambda} \cdot \vec{V2}$,
+                          \item $\lambda = Area(V0, V1, V2)$,
+                          \item $\lambda_0 = Area(V0, V1, P)$, $\lambda_1 = Area(V1, V2, P)$, $\lambda_2 = Area(V2, V0, P)$.
+                      \end{itemize}
+        \end{itemize}
+
+        \vfill
+
+        \begin{minipage}{\textwidth}
+            \centering
+
+            \fbox{\includegraphics[height=0.2\textwidth]{images/interpolacja.jpg}}
+            \fbox{\includegraphics[height=0.2\textwidth]{images/triangle-color.png}}
+        \end{minipage}
+
+        \let\thefootnote\relax\footnote[frame]{
+            \tiny
+            \hspace{-3.25em}
+            Źródło obrazu:
+        }
+    \end{frame}
+
+
+    \begin{frame}
+        \frametitle{Zadania do wykonania (5)}
+        \setstretch{1.25}
+        \footnotesize
+
+        Na ocenę \textbf{5.0} należy dodać wygładzanie krawędzi w generowanym obrazie.
+
+        \vfill
+
+        Wskazówki:
+        \begin{itemize}
+            \setlength{\itemsep}{0.5em}
+            \item[--] doskonale sprawdzi się \textbf{SSAA} – ang. \textit{Super Sampling Anti-Aliasing},
+            \item[--] należy wygenerować obraz roboczy w wyższej rozdzielczości,
+                      \begin{itemize}
+                          \scriptsize
+                          \item wystarczy wysokość, szerokość i wszystkie współrzędne przemnożyć razy 2,
+                          \item na tym etapie nie powinno być potrzeby modyfikacji funkcji rysujących,
+                          \item zmianna powinna wiązać się jedynie z wywołaniami funkcji rysujących,
+                          \item warto w tym miejscu wprowadzić dodatkową zmienną, np. \mintinline{python}{scale = 2},
+                      \end{itemize}
+            \item[--] obraz wynikowy uzyskać przez przeskalowanie w dół obrazu roboczego,
+                      \begin{itemize}
+                          \scriptsize
+                          \item 1 piksel obrazu wynikowego to 4 uśrednione piksele obrazu roboczego.
+                      \end{itemize}
+        \end{itemize}
+    \end{frame}
+\end{document}
