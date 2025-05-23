@@ -27,7 +27,8 @@
 
 # Jak dodać sprawdzenie niewykonywalnych?
 
-find linux-5.11.13 -type f -name '[A-Z]*.py' -printf "%f\n"
+# find linux-5.11.13 -type f -name '[A-Z]*.py' -printf "%f\n"
+find linux-5.11.13/ -type f -name '[A-Z]*.py' ! -executable -printf '%f\n'
 # find linux-5.11.13 -type f -name '[A-Z]*.py' -printf "%M %f\n"
 
-# find . -type f -name "[A-Z]*.py" ! -executable -printf "%f\n"
+# find linux-5.11.13 -type f -name "[A-Z]*.py" ! -executable -printf "%f\n"
