@@ -27,3 +27,5 @@
 # du --summarize --bytes --apparent-size coreutils-8.32/
 #
 
+find coreutils-8.32 -type f -printf "%s\n" | awk '{sum+=$1} END {print sum/1048576}'
+# 1 MiB = 1048576 B

@@ -25,3 +25,5 @@
 # (źródło: https://wolnelektury.pl/media/book/txt/pan-tadeusz.txt).
 #
 
+awk 'NR % 3 == 2' dodatkowe/tadeusz.txt
+# linie, gdzie reszta z dzielenia przez 3 jest równa dwa

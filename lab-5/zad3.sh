@@ -27,3 +27,5 @@
 # pliku ze strony: https://people.sc.fsu.edu/~jburkardt/data/csv/csv.html
 #
 
+awk -F, 'NR==1 {fields=NF} NR>1 && NF!=fields {print NR}' dodatkowe/cities.csv
+# NF - liczba pól w rekordzie

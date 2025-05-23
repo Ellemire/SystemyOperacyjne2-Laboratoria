@@ -35,3 +35,17 @@
 # i według przyjętej reguły – traktujemy ten wpis jak osobną osobę!
 #
 
+awk -F: '
+/Prowadzący:/ {
+    if (name) totals[name] += chars;
+    name = $2;
+    chars = 0;
+    next
+} 
+{
+    chars += length($0)
+} 
+END {
+    if (name) totals[name] += chars;
+    for (name in totals) print totals[name], name;
+}' dodatkowe/doc-tajemnic.txt

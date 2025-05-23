@@ -26,3 +26,15 @@
 # uwzględnić taką sytuację.
 #
 
+awk '
+{
+    for(i = 1; i <= NF; i++) {
+        gsub(/[.,]/, "", $i); 
+        len=length($i); 
+        if(len>0) 
+            count[len]++
+    }
+} END {
+    for(l in count) 
+        print l, count[l]
+}' dodatkowe/nowomowa.txt

@@ -24,3 +24,4 @@
 # Każdą nazwę użytkownika wypisać w nowej linii.
 #
 
+awk -F: '$3 >= 1000 && $7 == "/bin/bash" {print $1}' dodatkowe/etc-passwd

@@ -28,3 +28,12 @@
 # pliku ze strony: https://people.sc.fsu.edu/~jburkardt/data/csv/csv.html
 #
 
+awk -F, 'NR>1 {
+    sum = $4 + $5 + $6 + $7 + 2*$8;
+    avg = sum / 6;
+    gsub(/"/, "", $3);
+    gsub(/ /, "", $3);
+    printf "%s %.6g\n", $3, avg
+}' dodatkowe/grades.csv
+
+# gsub(wzorzec, zamiana, źródło)

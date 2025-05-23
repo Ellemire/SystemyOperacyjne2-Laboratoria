@@ -25,3 +25,15 @@
 # tekst po przekształceniu.
 #
 
+awk '{
+    line = "";
+    for (i = 1; i <= NF; i++) {
+        if (length(line) + (line ? 1 : 0) + length($i) >= 80) {
+            print line;
+            line = $i;
+        } else {
+            line = (line ? line " " $i : $i);
+        }
+    }
+    print line;
+}' dodatkowe/lipsum.txt
