@@ -30,3 +30,52 @@
 # kolejnego zbioru kluczy i wartości.
 #
 
+
+awk '
+BEGIN {
+    output = ""
+    stack_size = 0
+}
+{
+    for (i = 1; i <= NF; i++) {
+        word = $i
+        next_word = (i < NF) ? $(i+1) : ""
+        rest = word
+
+        # "klucz":
+        if (match(rest, /\{?"[^"]+":/)) {
+            match_text = substr(rest, RSTART, RLENGTH)
+            gsub(/[\{"":]/, "", match_text)
+            if (match(next_word, /"",/)) {
+                output = output "<" match_text " />"
+            }
+            else {
+                stack[++stack_size] = match_text
+                output = output "<" match_text ">"
+            }
+        }
+
+        # "wartość",
+        else if (match(rest, /"([^"]+)"}?,?/)) {
+            match_text = substr(rest, RSTART, RLENGTH)
+            gsub(/["},]/, "", match_text)
+            output = output match_text
+            
+            # Zamknij tag jeśli jest , lub }
+            while (match(word, /[,}]/)) {
+                if (stack_size > 0) {
+                    output = output "</" stack[stack_size] ">"
+                    delete stack[stack_size]
+                    stack_size--
+                }
+
+                sub(/[,}]/, "", word)
+            }
+        }
+    }
+}
+END {
+    print output
+}
+' dodatkowe/simple.json
+

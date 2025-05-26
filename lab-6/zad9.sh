@@ -21,3 +21,4 @@
 # za wszystkimi pojedynczymi literami w tekście.
 #
 
+grep '^#' "$0" | sed -E 's/\b([a-zA-Z]) /\1\&nbsp;/g'

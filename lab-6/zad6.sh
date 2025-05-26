@@ -26,3 +26,5 @@
 # Jako wynik zwrócić same unikalne ścieżki, każdą w nowej linii.
 #
 
+grep '\\fbox.*\\includegraphics' dodatkowe/slajdy.tex | \
+grep -oP '\\includegraphics(?:\[[^]]*\])?{\K[^}]+' | sort -u

@@ -24,3 +24,4 @@
 # Zwrócić same unikalne nazwy, bez nawiasów, każdą nazwę w nowej linii.
 #
 
+grep -oP '^\s*def\s+\K[a-z_]+(?=\s*\()' dodatkowe/service.py | sort -u

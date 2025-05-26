@@ -21,3 +21,11 @@
 # Celsjusza na Fahrenheita: T[°F] = T[°C] * 9/5 + 32.
 #
 
+awk '{
+    while (match($0, /([0-9]+\.[0-9]+)°C/)) {
+        temp_c = substr($0, RSTART, RLENGTH - 2);
+        temp_f = sprintf("%.1f", temp_c * 9 / 5 + 32);
+        $0 = substr($0, 1, RSTART - 1) temp_f "°F" substr($0, RSTART + RLENGTH);
+    }
+    print
+}' dodatkowe/sensors.txt

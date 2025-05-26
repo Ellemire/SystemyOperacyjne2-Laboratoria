@@ -22,3 +22,4 @@
 # pomijając linie puste i takie, których jedyną zawartość stanowią spacje.
 #
 
+sed 's/<[^>]*>//g' dodatkowe/cpplint.txt | grep -v '^[[:space:]]*$'

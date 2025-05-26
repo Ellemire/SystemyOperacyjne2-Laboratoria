@@ -24,3 +24,4 @@
 # Każdy znaleziony unikalny odnośnik wypisać w nowej linii.
 #
 
+grep -oE '\b[a-zA-Z]+://[^{}[:space:]]+' dodatkowe/slajdy.tex | sort -u

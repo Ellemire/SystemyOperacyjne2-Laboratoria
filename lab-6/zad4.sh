@@ -22,3 +22,17 @@
 # Wynik wyświetlić jako ułamek w postaci X/Y.
 #
 
+awk '
+BEGIN {
+    total=0;
+    nonempty=0
+}
+{
+    total++
+}
+/[^[:space:]]/ {
+    nonempty++
+}
+END {
+    print nonempty "/" total
+}' dodatkowe/slajdy.tex

@@ -21,3 +21,6 @@
 # w nowej linii, bez powtórzeń, bez żadnych znaków innych niż litery.
 #
 
+grep -o '\b[A-Z][a-z]*\b' dodatkowe/lipsum.txt | sort -u
+
+# -o — tylko dopasowania

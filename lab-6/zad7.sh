@@ -23,3 +23,4 @@
 # także wyodrębnić.
 #
 
+grep -oE '\b[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.[A-Za-z]+\b|\+?[0-9]+[0-9() -]{7,}[0-9]' dodatkowe/kant.txt | sort -u
