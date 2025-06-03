@@ -44,9 +44,45 @@ if [[ -z "$LIB_LINE" ]]; then
 
 # Jeżeli plik zawiera zdeklarowne biblioteki
 else
-  EXISTING_LIBS=$(echo "$LIB_LINE" | grep -oP "'\K[^']*(?=')")          # Wyjęcie bibliotek z apostrofów
+  EXISTING_LIBS=""
+  inside_quotes=false
+  escape_next=false
+
+  for (( i=0; i<${#LIB_LINE}; i++ )); do
+      char="${LIB_LINE:$i:1}"
+      
+      if $escape_next; then
+          EXISTING_LIBS+="$char"
+          escape_next=false
+          continue
+      fi
+      
+      case "$char" in
+          "\\")
+              escape_next=true
+              EXISTING_LIBS+="$char"
+              ;;
+          "'")
+              if $inside_quotes; then
+                  break  # koniec nieuciekanego apostrofu
+              else
+                  inside_quotes=true
+              fi
+              ;;
+          *)
+              if $inside_quotes; then
+                  EXISTING_LIBS+="$char"
+              fi
+              ;;
+      esac
+  done
+
+  echo "EXISTING_LIBS: $EXISTING_LIBS"
+  # EXISTING_LIBS=$(echo "$LIB_LINE" | grep -oP "'\K[^']*(?=(?<!\\)')")          # Wyjęcie bibliotek z apostrofów
+
+
   REMOVED_LIBS=$(echo "$EXISTING_LIBS" | sed 's/[[:space:]]*,[[:space:]]*/,/g') # Usuwanie spacji
-  echo "EXISTING_LIBS: $REMOVED_LIBS"
+  echo "REMOVED_LIBS:  $REMOVED_LIBS"
 
   # Sprawdź, czy biblioteka już istnieje
   if [[ "$REMOVED_LIBS" =~ (^|,)"$LIB_NAME"(,|$) ]]; then
