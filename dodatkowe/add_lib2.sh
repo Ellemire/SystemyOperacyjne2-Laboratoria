@@ -45,7 +45,7 @@ if [[ -z "$LIB_LINE" ]]; then
 # Jeżeli plik zawiera zdeklarowne biblioteki
 else
   EXISTING_LIBS=$(echo "$LIB_LINE" | grep -oP "'\K[^']*(?=')")          # Wyjęcie bibliotek z apostrofów
-  REMOVED_LIBS=${EXISTING_LIBS// /}                                     # Usuwanie spacji
+  REMOVED_LIBS=$(echo "$EXISTING_LIBS" | sed 's/[[:space:]]*,[[:space:]]*/,/g') # Usuwanie spacji
   echo "EXISTING_LIBS: $REMOVED_LIBS"
 
   # Sprawdź, czy biblioteka już istnieje
