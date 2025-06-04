@@ -33,6 +33,11 @@ if [[ ! -f "$CONF_FILE" ]]; then
   exit 1
 fi
 
+# Dodanie znaków ucieczki do wprowadzonej nazwy biblioteki
+echo "LIB_NAME: ${LIB_NAME}"
+LIB_NAME=$(echo "${LIB_NAME}" | sed -e 's/\\/\\\\/g' -e "s/'/\\\\'/g")
+echo "LIB_NAME: ${LIB_NAME}"
+
 # Wczytaj aktualną wartość shared_preload_libraries
 LIB_LINE=$(tac "$CONF_FILE" | grep -m 1 -E "^[[:space:]]*shared_preload_libraries[[:space:]]*=[[:space:]]*'[^']*'")
 echo "LIB_LINE: ${LIB_LINE}"
@@ -76,10 +81,8 @@ else
               ;;
       esac
   done
-
-  echo "EXISTING_LIBS: $EXISTING_LIBS"
   # EXISTING_LIBS=$(echo "$LIB_LINE" | grep -oP "'\K[^']*(?=(?<!\\)')")          # Wyjęcie bibliotek z apostrofów
-
+  echo "EXISTING_LIBS: $EXISTING_LIBS"
 
   REMOVED_LIBS=$(echo "$EXISTING_LIBS" | sed 's/[[:space:]]*,[[:space:]]*/,/g') # Usuwanie spacji
   echo "REMOVED_LIBS:  $REMOVED_LIBS"
@@ -90,8 +93,12 @@ else
 
   # Jeżeli nie istnieje dodaj bibliotekę
   else
-    UPDATED_LIBS=$(echo "$EXISTING_LIBS,$LIB_NAME")                     # Dodaje bibliotekę
-
+    if [[ -z "$REMOVED_LIBS" ]]; then
+      UPDATED_LIBS=$(echo "$LIB_NAME")
+    else
+      UPDATED_LIBS=$(echo "$EXISTING_LIBS,$LIB_NAME")                     # Dodaje bibliotekę
+    fi
+    echo "" >> "$CONF_FILE"
     echo "shared_preload_libraries = '${UPDATED_LIBS}'" >> "$CONF_FILE" # Dopisywanie nowej linii
     echo "Zaktualizowano shared_preload_libraries, dodano '$LIB_NAME'."
   fi
