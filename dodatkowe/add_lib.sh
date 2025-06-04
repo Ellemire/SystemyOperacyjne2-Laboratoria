@@ -7,23 +7,10 @@ LIB_NAME="timescaledb"
 # Parametry
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -f|--file)
-      CONF_FILE="$2"
-      shift 2
-      ;;
-    -l|--lib)
-      LIB_NAME="$2"
-      shift 2
-      ;;
-    -h|--help)
-      echo "Użycie: $0 [--file ŚCIEŻKA] [--lib NAZWA_BIBLIOTEKI]"
-      exit 0
-      ;;
-    *)
-      echo "Nieznana opcja: $1"
-      echo "Użycie: $0 [--file ŚCIEŻKA] [--lib NAZWA_BIBLIOTEKI]"
-      exit 1
-      ;;
+    -f|--file) CONF_FILE="$2"; shift 2 ;;
+    -l|--lib) LIB_NAME="$2"; shift 2 ;;
+    -h|--help) echo "Użycie: $0 [--file ŚCIEŻKA] [--lib NAZWA_BIBLIOTEKI]"; exit 0 ;;
+    *) echo "Nieznana opcja: $1. Użycie: $0 [--file ŚCIEŻKA] [--lib NAZWA_BIBLIOTEKI]"; exit 1 ;;
   esac
 done
 
@@ -34,9 +21,9 @@ if [[ ! -f "$CONF_FILE" ]]; then
 fi
 
 # Dodanie znaków ucieczki do wprowadzonej nazwy biblioteki
-echo "LIB_NAME: ${LIB_NAME}"
+echo "LIB_NAME          : ${LIB_NAME}"
 LIB_NAME=$(echo "${LIB_NAME}" | sed -e 's/\\/\\\\/g' -e "s/'/\\\\'/g")
-echo "LIB_NAME: ${LIB_NAME}"
+echo "LIB_NAME (escaped): ${LIB_NAME}"
 
 # Wczytaj aktualną wartość shared_preload_libraries
 LIB_LINE=$(tac "$CONF_FILE" | grep -m 1 -E "^[[:space:]]*shared_preload_libraries[[:space:]]*=[[:space:]]*'[^']*'")
@@ -50,36 +37,29 @@ if [[ -z "$LIB_LINE" ]]; then
 # Jeżeli plik zawiera zdeklarowne biblioteki
 else
   EXISTING_LIBS=""
-  inside_quotes=false
-  escape_next=false
+  inside_quotes=false           # Flaga czy jesteśmy wewnątrz apostrofów
+  escape_next=false             # Flaga czy następny znak jest escapowany
 
   for (( i=0; i<${#LIB_LINE}; i++ )); do
-      char="${LIB_LINE:$i:1}"
-      
-      if $escape_next; then
-          EXISTING_LIBS+="$char"
-          escape_next=false
-          continue
-      fi
-      
-      case "$char" in
-          "\\")
-              escape_next=true
+    char="${LIB_LINE:$i:1}"     # Pobierz pojedynczy znak z pozycji i
+    
+    if $escape_next; then
+      EXISTING_LIBS+="$char"    # Nie sprawdza kolejnego znaku
+      escape_next=false
+      continue
+    fi
+    
+    case "$char" in
+      "\\") escape_next=true; EXISTING_LIBS+="$char" ;;
+      "'")  if $inside_quotes; then
+              break  # koniec
+            else
+              inside_quotes=true
+            fi ;;
+      *)    if $inside_quotes; then
               EXISTING_LIBS+="$char"
-              ;;
-          "'")
-              if $inside_quotes; then
-                  break  # koniec nieuciekanego apostrofu
-              else
-                  inside_quotes=true
-              fi
-              ;;
-          *)
-              if $inside_quotes; then
-                  EXISTING_LIBS+="$char"
-              fi
-              ;;
-      esac
+            fi ;;
+    esac
   done
   # EXISTING_LIBS=$(echo "$LIB_LINE" | grep -oP "'\K[^']*(?=(?<!\\)')")          # Wyjęcie bibliotek z apostrofów
   echo "EXISTING_LIBS: $EXISTING_LIBS"
@@ -96,7 +76,7 @@ else
     if [[ -z "$REMOVED_LIBS" ]]; then
       UPDATED_LIBS=$(echo "$LIB_NAME")
     else
-      UPDATED_LIBS=$(echo "$EXISTING_LIBS,$LIB_NAME")                     # Dodaje bibliotekę
+      UPDATED_LIBS=$(echo "$EXISTING_LIBS,$LIB_NAME")
     fi
     echo "" >> "$CONF_FILE"
     echo "shared_preload_libraries = '${UPDATED_LIBS}'" >> "$CONF_FILE" # Dopisywanie nowej linii

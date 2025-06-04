@@ -17,3 +17,7 @@ Należy napisać skrypt w bashu (pozostawiam wam dowolność czy użyjecie sed'a
 - Skrypt upewnia się, że wpis shared_preload_libraries zawierający daną bibliotekę jest aktywny, czyli nie znajduje się w komentarzu.
 
 - Skrypt musi być idiotoodporny, to jest, ten plik mógł ktoś przed wami zmodyfikować, także proszę wziąć poprawkę na to aby pokryć różnego rodzaju edge case'y.
+
+# Instrukcja obsługi
+
+Uruchomienie skryptu: `./add_lib.sh [--file ścieżka_do_pliku] [--lib nazwa_biblioteki]`
