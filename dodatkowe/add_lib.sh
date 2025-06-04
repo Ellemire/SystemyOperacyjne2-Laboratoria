@@ -20,9 +20,9 @@ if [[ ! -f "$CONF_FILE" ]]; then
   exit 1
 fi
 
-# Dodanie znaków ucieczki do wprowadzonej nazwy biblioteki
+# Dodanie znaków ucieczki do wprowadzonej nazwy biblioteki (przy ' \ ,)
 echo "LIB_NAME          : ${LIB_NAME}"
-LIB_NAME=$(echo "${LIB_NAME}" | sed -e 's/\\/\\\\/g' -e "s/'/\\\\'/g")
+LIB_NAME=$(echo "${LIB_NAME}" | sed -e 's/\\/\\\\/g' -e 's/,/\\,/g' -e "s/'/\\\\'/g")
 echo "LIB_NAME (escaped): ${LIB_NAME}"
 
 # Wczytaj aktualną wartość shared_preload_libraries
