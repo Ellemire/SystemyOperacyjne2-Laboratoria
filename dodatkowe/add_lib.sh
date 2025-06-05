@@ -69,7 +69,45 @@ else
   # EXISTING_LIBS=$(echo "$LIB_LINE" | grep -oP "'\K[^']*(?=(?<!\\)')")          # Wyjęcie bibliotek z apostrofów
   echo "EXISTING_LIBS: $EXISTING_LIBS"
 
-  REMOVED_LIBS=$(echo "$EXISTING_LIBS" | sed 's/[[:space:]]*,[[:space:]]*/,/g') # Usuwanie spacji
+# Przypadek separacji spacjami
+if [[ "$EXISTING_LIBS" != *","* && "$EXISTING_LIBS" == *" "* ]]; then
+    echo "Separacja spacjami!"
+
+    # Zamień spacje na przecinki, z zachowaniem spacji w cudzysłowach
+    CORRECTED_LIBS=""
+    in_quotes=false
+    buffer=""
+
+    for (( j=0; j<${#EXISTING_LIBS}; j++ )); do
+      char="${EXISTING_LIBS:$j:1}"
+
+      case "$char" in
+        '"')  if $in_quotes; then
+                in_quotes=false
+              else
+                in_quotes=true
+              fi
+              buffer+="$char" ;;
+        ' ')  if $in_quotes; then
+                buffer+="$char"
+              else
+                buffer+=","
+              fi ;;
+        *)    buffer+="$char" ;;
+      esac
+    done
+
+    if [[ -n "$buffer" ]]; then
+      CORRECTED_LIBS+="$buffer"
+    fi
+    echo "CORRECTED_LIBS: $CORRECTED_LIBS"
+
+    # Zaktualizuj wartość w zmiennej
+    EXISTING_LIBS="$CORRECTED_LIBS"
+  fi
+
+  # Usuń spacje
+  REMOVED_LIBS=$(echo "$EXISTING_LIBS" | sed 's/[[:space:]]*,[[:space:]]*/,/g') 
   echo "REMOVED_LIBS:  $REMOVED_LIBS"
 
   # Sprawdź, czy biblioteka już istnieje
@@ -83,7 +121,6 @@ else
     else
       UPDATED_LIBS=$(echo "$EXISTING_LIBS,$LIB_NAME")
     fi
-    echo "" >> "$CONF_FILE"
     echo "shared_preload_libraries = '${UPDATED_LIBS}'" >> "$CONF_FILE" # Dopisywanie nowej linii
     echo "Zaktualizowano shared_preload_libraries, dodano '$LIB_NAME'."
   fi
