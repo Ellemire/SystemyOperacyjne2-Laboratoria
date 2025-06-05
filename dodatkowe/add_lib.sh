@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Domyślne wartości
-CONF_FILE="postgresql.2.conf"
+CONF_FILE="postgresql.conf"
 LIB_NAME="timescaledb"
 
 # Parametry
@@ -17,6 +17,12 @@ done
 # Sprawdzenie, czy plik istnieje
 if [[ ! -f "$CONF_FILE" ]]; then
   echo "Błąd: Plik konfiguracyjny '$CONF_FILE' nie istnieje."
+  exit 1
+fi
+
+# Sprawdzenie, czy biblioteka istnieje
+if [[ "$LIB_NAME" == "" ]]; then
+  echo "Błąd: Nie podano biblioteki."
   exit 1
 fi
 
@@ -107,16 +113,16 @@ if [[ "$EXISTING_LIBS" != *","* && "$EXISTING_LIBS" == *" "* ]]; then
   fi
 
   # Usuń spacje
-  REMOVED_LIBS=$(echo "$EXISTING_LIBS" | sed 's/[[:space:]]*,[[:space:]]*/,/g') 
-  echo "REMOVED_LIBS:  $REMOVED_LIBS"
+  CLEANED_LIBS=$(echo "$EXISTING_LIBS" | sed 's/[[:space:]]*,[[:space:]]*/,/g') 
+  echo "CLEANED_LIBS:  $CLEANED_LIBS"
 
   # Sprawdź, czy biblioteka już istnieje
-  if [[ "$REMOVED_LIBS" =~ (^|,)"$LIB_NAME"(,|$) ]]; then
+  if [[ "$CLEANED_LIBS" =~ (^|,)"$LIB_NAME"(,|$) ]]; then
     echo "Biblioteka '$LIB_NAME' już istnieje w shared_preload_libraries."
 
   # Jeżeli nie istnieje dodaj bibliotekę
   else
-    if [[ -z "$REMOVED_LIBS" ]]; then
+    if [[ -z "$CLEANED_LIBS" ]]; then
       UPDATED_LIBS=$(echo "$LIB_NAME")
     else
       UPDATED_LIBS=$(echo "$EXISTING_LIBS,$LIB_NAME")
