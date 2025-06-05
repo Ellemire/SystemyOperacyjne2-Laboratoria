@@ -26,6 +26,15 @@ if [[ "$LIB_NAME" == "" ]]; then
   exit 1
 fi
 
+# Utwórz kopię zapasową
+bak_name="${CONF_FILE}.bak"
+cp "$CONF_FILE" "$bak_name"
+
+# Dodaj znak nowej linii na końcu pliku
+if [[ -f "$CONF_FILE" ]]; then
+  sed -i.bak -e '$a\' "$CONF_FILE"
+fi
+
 # Dodanie znaków ucieczki do wprowadzonej nazwy biblioteki (przy ' \)
 echo "LIB_NAME          : ${LIB_NAME}"
 LIB_NAME=$(echo "${LIB_NAME}" | sed -e 's/\\/\\\\/g' -e "s/'/\\\\'/g")
@@ -127,7 +136,10 @@ if [[ "$EXISTING_LIBS" != *","* && "$EXISTING_LIBS" == *" "* ]]; then
     else
       UPDATED_LIBS=$(echo "$EXISTING_LIBS,$LIB_NAME")
     fi
-    echo "shared_preload_libraries = '${UPDATED_LIBS}'" >> "$CONF_FILE" # Dopisywanie nowej linii
+    sed -i.bak '/^[[:space:]]*shared_preload_libraries[[:space:]]*=/d' "$CONF_FILE"
+    echo "shared_preload_libraries = '${UPDATED_LIBS}'" >> "$CONF_FILE"
     echo "Zaktualizowano shared_preload_libraries, dodano '$LIB_NAME'."
   fi
 fi
+
+# rm $bak_name
